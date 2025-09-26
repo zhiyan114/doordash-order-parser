@@ -59,18 +59,21 @@ class GmailMgr:
             msg = gmailTool.users().messages().get(userId='me', id=msg['id']).execute()
             for part in msg['payload'].get('parts', []):
                 if part['filename'] and 'attachmentId' in part['body']:
-                    att = gmailTool.users().messages().attachments().get(userId='me', messageId=msg['id'], id=part['body']['attachmentId']).execute()
-                    data = att['data'].replace('-', '+').replace('_', '/')
                     filePath = os.path.join(tempDir, part['filename'])
-                    with open(filePath, 'wb') as f:
-                        f.write(base64.b64decode(data))
-                    logger.debug('GmailMgr.download_attachments: Saved {msgid} attachment to {file}', msgid=msg['id'], file=filePath)
+                    if not os.path.exists(filePath):
+                        att = gmailTool.users().messages().attachments().get(userId='me', messageId=msg['id'], id=part['body']['attachmentId']).execute()
+                        data = att['data'].replace('-', '+').replace('_', '/')
+                        with open(filePath, 'wb') as f:
+                            f.write(base64.b64decode(data))
+                        logger.debug('GmailMgr.download_attachments: Saved {msgid} attachment to {file}', msgid=msg['id'], file=filePath)
+                        continue
+                    logger.warning('GmailMgr.download_attachments: attachment already existed for {file}', file=filePath)
 
-        if os.path.isdir(tempDir):
-            for f in os.listdir(tempDir):
-                os.remove(os.path.join(tempDir, f))
-            os.rmdir(tempDir)
-            logger.debug('GmailMgr.download_attachments: Cleaned up temp dir: {dir}', dir=tempDir)
+        # if os.path.isdir(tempDir):
+        #     for f in os.listdir(tempDir):
+        #         os.remove(os.path.join(tempDir, f))
+        #     os.rmdir(tempDir)
+        #     logger.debug('GmailMgr.download_attachments: Cleaned up temp dir: {dir}', dir=tempDir)
 
     def __write_token(self):
         with open(self.credPath, "w") as writer:
