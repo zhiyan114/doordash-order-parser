@@ -3,3 +3,4 @@ Gtoken.json
 OAuth.json
 temp/
 __pycache__/
+.env

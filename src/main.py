@@ -19,7 +19,8 @@ if __name__ == "__main__":
     dotenv.load_dotenv()
     sentry_sdk.init(
         dsn=os.getenv("SENTRY_DSN", "http://dead@localhost/0000000"),
-        traces_sample_rate=1.0,
+        traces_sample_rate=0.0,
+        send_default_pii=True,
         enable_logs=True,
         before_send_log=log_handler
     )
