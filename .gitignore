@@ -2,3 +2,4 @@ venv/
 Gtoken.json
 OAuth.json
 temp/
+__pycache__/

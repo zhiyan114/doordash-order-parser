@@ -64,7 +64,7 @@ class GmailMgr:
                     filePath = os.path.join(tempDir, part['filename'])
                     with open(filePath, 'wb') as f:
                         f.write(base64.b64decode(data))
-                    logger.debug('GmailMgr.download_attachments: Saved attachment to {file}', file=filePath)
+                    logger.debug('GmailMgr.download_attachments: Saved {msgid} attachment to {file}', msgid=msg['id'], file=filePath)
 
         if os.path.isdir(tempDir):
             for f in os.listdir(tempDir):

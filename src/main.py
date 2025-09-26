@@ -1,4 +1,6 @@
 import sentry_sdk
+import dotenv
+import os
 from sentry_sdk.types import Log, Hint
 from gmailMGR import GmailMgr
 
@@ -13,8 +15,9 @@ def log_handler(log: Log, hint: Hint):
 
 
 if __name__ == "__main__":
+    dotenv.load_dotenv()
     sentry_sdk.init(
-        dsn="http://dead@localhost/0000000",
+        dsn=os.getenv("SENTRY_DSN", "http://dead@localhost/0000000"),
         traces_sample_rate=1.0,
         enable_logs=True,
         before_send_log=log_handler
