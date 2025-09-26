@@ -3,6 +3,7 @@ import dotenv
 import os
 from sentry_sdk.types import Log, Hint
 from gmailMGR import GmailMgr
+from PDFParse import DDPDFParser
 
 
 def log_handler(log: Log, hint: Hint):
@@ -22,6 +23,9 @@ if __name__ == "__main__":
         enable_logs=True,
         before_send_log=log_handler
     )
-    mailMgr = GmailMgr()
-    mailMgr.fetch_token()
-    mailMgr.download_attachments()
+    # mailMgr = GmailMgr()
+    parserMgr = DDPDFParser()
+    # mailMgr.fetch_token()
+    # mailMgr.download_attachments()
+    parserMgr.parseDir()
+    print(parserMgr.computeTotals())
