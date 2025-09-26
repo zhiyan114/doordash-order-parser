@@ -23,9 +23,9 @@ if __name__ == "__main__":
         enable_logs=True,
         before_send_log=log_handler
     )
-    # mailMgr = GmailMgr()
+    mailMgr = GmailMgr()
     parserMgr = DDPDFParser()
-    # mailMgr.fetch_token()
-    # mailMgr.download_attachments()
+    mailMgr.fetch_token()
+    mailMgr.download_attachments()
     parserMgr.parseDir()
     print("COMPUTED DATA: ", parserMgr.computeTotals())
