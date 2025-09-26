@@ -67,22 +67,40 @@ class DDPDFParser:
         return data
 
     def computeTotals(self) -> dict:
-        data = {"subtotal": 0, "tax": 0, "total": 0}
+        data = {"subtotal": 0.0, "tax": 0.0, "total": 0.0}
         for item in self.PDFData:
             data["subtotal"] += item.get("subtotal", 0)
             data["tax"] += item.get("tax", 0)
             data["total"] += item.get("total", 0)
+
+        # Basic validation (Check if the potential pdf format is updated)
+        if (data["subtotal"] < 0.0):
+            raise Exception("DDPDFParser.computeTotals: Subtotal isn't computed correctly (broken parsing algorithm?)")
+        if (data["tax"] < 0.0):
+            raise Exception("DDPDFParser.computeTotals: Tax isn't computed correctly (broken parsing algorithm?)")
+        if (data["total"] < 0.0):
+            raise Exception("DDPDFParser.computeTotals: Total isn't computed correctly (broken parsing algorithm?)")
+
         return data
 
     # We're just doing guess work with this one lmao
     def __computeSubtotal(self, text: list):
-        subIndex = text.index("Subtotal:") + 1
-        return float(text[subIndex][1:])
+        try:
+            subIndex = text.index("Subtotal:") + 1
+            return float(text[subIndex][1:])
+        except ValueError:
+            return -1
 
     def __computeTax(self, text: list):
-        taxIndex = text.index("+ Tax (6.500%):") + 1
-        return float(text[taxIndex][1:])
+        try:
+            taxIndex = text.index("+ Tax (6.500%):") + 1
+            return float(text[taxIndex][1:])
+        except ValueError:
+            return -1
 
     def __computeTotal(self, text: list):
-        totIndex = text.index("Total:") + 1
-        return float(text[totIndex][1:])
+        try:
+            totIndex = text.index("Total:") + 1
+            return float(text[totIndex][1:])
+        except ValueError:
+            return -1

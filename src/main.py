@@ -28,4 +28,4 @@ if __name__ == "__main__":
     # mailMgr.fetch_token()
     # mailMgr.download_attachments()
     parserMgr.parseDir()
-    print(parserMgr.computeTotals())
+    print("COMPUTED DATA: ", parserMgr.computeTotals())
