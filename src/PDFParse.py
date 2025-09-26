@@ -20,8 +20,8 @@ class DDPDFParser:
         if delProcFile and os.path.isdir(DirPath):
             for f in os.listdir(DirPath):
                 os.remove(os.path.join(DirPath, f))
-                os.rmdir(DirPath)
-                logger.debug('DDPDFParser.parseDir: Cleaned up temp dir: {dir}', dir=DirPath)
+            os.rmdir(DirPath)
+            logger.debug('DDPDFParser.parseDir: Cleaned up temp dir: {dir}', dir=DirPath)
 
         return copy.deepcopy(self.PDFData)
 
