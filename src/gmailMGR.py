@@ -1,4 +1,6 @@
 import os
+import base64
+import math
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -43,30 +45,30 @@ class GmailMgr:
         if not os.path.isdir(tempDir):
             os.mkdir(tempDir)
 
-        searchParam = f"from:orders@doordash.com has:attachment after:{(datetime.today() - timedelta(days=1)).strftime('%Y/%m/%d')}"
+        dNow = datetime.now() - timedelta(days=1)
+        searchParam = f"from:orders@doordash.com has:attachment after:{math.ceil((datetime(dNow.year, dNow.month, dNow.day, 0, 0, 0)).timestamp())}"
         gmailTool = build('gmail', 'v1', credentials=self.gCred)
 
         logger.info("GmailMgr.download_attachments: Searching emails with query: {param}", param=searchParam)
-        searchResult = gmailTool.users().messages().list(userId='me', q=searchParam).execute()
+        searchMsgs = gmailTool.users().messages().list(userId='me', q=searchParam).execute().get('messages', [])
+        logger.info("GmailMgr.download_attachments: Processing {count} emails", count=len(searchMsgs))
 
-        for msg in searchResult.get('messages', []):
+        for msg in searchMsgs:
             msg = gmailTool.users().messages().get(userId='me', id=msg['id']).execute()
             for part in msg['payload'].get('parts', []):
-                if part['filename'] and part['filename'].endswith('.pdf') and 'attachmentId' in part['body']:
-                    attachment = gmailTool.users().messages().attachments().get(
-                        userId='me', messageId=msg['id'], id=part['body']['attachmentId']
-                    ).execute()
-                    data = attachment['data']
+                if part['filename'] and 'attachmentId' in part['body']:
+                    att = gmailTool.users().messages().attachments().get(userId='me', messageId=msg['id'], id=part['body']['attachmentId']).execute()
+                    data = att['data'].replace('-', '+').replace('_', '/')
                     filePath = os.path.join(tempDir, part['filename'])
                     with open(filePath, 'wb') as f:
-                        f.write(data.encode('utf-8'))
-                    logger.info('GmailMgr.download_attachments: Saved attachment to {file}', file=filePath)
+                        f.write(base64.b64decode(data))
+                    logger.debug('GmailMgr.download_attachments: Saved attachment to {file}', file=filePath)
 
-        # if os.path.isdir(tempDir):
-        #     for f in os.listdir(tempDir):
-        #         os.remove(os.path.join(tempDir, f))
-        #     os.rmdir(tempDir)
-        #     logger.debug('GmailMgr.download_attachments: Cleaned up temp dir: {dir}', dir=tempDir)
+        if os.path.isdir(tempDir):
+            for f in os.listdir(tempDir):
+                os.remove(os.path.join(tempDir, f))
+            os.rmdir(tempDir)
+            logger.debug('GmailMgr.download_attachments: Cleaned up temp dir: {dir}', dir=tempDir)
 
     def __write_token(self):
         with open(self.credPath, "w") as writer:
