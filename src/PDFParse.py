@@ -73,6 +73,11 @@ class DDPDFParser:
             data["tax"] += item.get("tax", 0)
             data["total"] += item.get("total", 0)
 
+        # Clean up rounding error
+        data["subtotal"] = round(data["subtotal"], 2)
+        data["tax"] = round(data["tax"], 2)
+        data["total"] = round(data["total"], 2)
+
         # Basic validation (Check if the potential pdf format is updated)
         if (data["subtotal"] < 0.0):
             raise Exception("DDPDFParser.computeTotals: Subtotal isn't computed correctly (broken parsing algorithm?)")
