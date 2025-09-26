@@ -5,6 +5,10 @@ from gmailMGR import GmailMgr
 
 def log_handler(log: Log, hint: Hint):
     print(log["body"])
+
+    # Probably sentry's own log
+    if len(log["body"].split(":")) < 2:
+        return None
     return log
 
 

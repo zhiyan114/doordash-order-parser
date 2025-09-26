@@ -10,6 +10,8 @@ from sentry_sdk import logger
 
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
+# Track Docs: https://googleapis.github.io/google-api-python-client/docs/dyn/gmail_v1.html
+
 
 class GmailMgr:
     credPath: str = None
