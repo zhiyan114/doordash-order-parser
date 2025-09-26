@@ -1,19 +1,45 @@
+import logging
 import sentry_sdk
 import dotenv
 import os
+import asyncio
+import discord
 from sentry_sdk.types import Log, Hint
+from sentry_sdk import logger, capture_exception
 from gmailMGR import GmailMgr
 from PDFParse import DDPDFParser
+from BotManager import BotManager
+from sentry_sdk.integrations.logging import SentryLogsHandler
+from sentry_sdk.integrations.logging import LoggingIntegration
+
+botMGR = BotManager()
 
 
 def log_handler(log: Log, hint: Hint):
     print(log["body"])
-
-    # Probably sentry's own log
-    if len(log["body"].split(":")) < 2:
-        return None
     return log
 
+
+@botMGR.tree.command(name="generate", description="Generate today's doordash Financial Report")
+async def generate(interaction: discord.Interaction):
+    try:
+        await interaction.response.defer()
+
+        logger.info("{username} requested Doordash Financial Report", username=interaction.user.name)
+        mailMgr = GmailMgr()
+        parserMgr = DDPDFParser()
+        mailMgr.fetch_token()
+        mailMgr.download_attachments()
+        parserMgr.parseDir(delProcFile=True)
+
+        await interaction.followup.send(embed=botMGR.createReportEmbed(parserMgr.computeTotals()))
+    except Exception as ex:
+        capture_exception(ex)
+
+
+async def main():
+    discord.utils.setup_logging(handler=SentryLogsHandler(level=logging.DEBUG))
+    await botMGR.start(os.getenv("DISCORD_TOKEN", None))
 
 if __name__ == "__main__":
     dotenv.load_dotenv()
@@ -22,11 +48,10 @@ if __name__ == "__main__":
         traces_sample_rate=0.0,
         send_default_pii=True,
         enable_logs=True,
-        before_send_log=log_handler
+        before_send_log=log_handler,
+        default_integrations=False,
+        disabled_integrations=[
+            LoggingIntegration()
+        ]
     )
-    mailMgr = GmailMgr()
-    parserMgr = DDPDFParser()
-    mailMgr.fetch_token()
-    mailMgr.download_attachments()
-    parserMgr.parseDir(delProcFile=True)
-    print("COMPUTED DATA: ", parserMgr.computeTotals())
+    asyncio.run(main())
