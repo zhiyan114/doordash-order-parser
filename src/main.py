@@ -28,5 +28,5 @@ if __name__ == "__main__":
     parserMgr = DDPDFParser()
     mailMgr.fetch_token()
     mailMgr.download_attachments()
-    parserMgr.parseDir()
+    parserMgr.parseDir(delProcFile=True)
     print("COMPUTED DATA: ", parserMgr.computeTotals())
