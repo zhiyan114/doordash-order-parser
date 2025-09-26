@@ -1,6 +1,7 @@
 import os
 import base64
 import math
+import json
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -19,7 +20,11 @@ class GmailMgr:
     oAuthPath: str = None
 
     def __init__(self, oAuthPath: str = "OAuth.json", credPath: str = "GToken.json"):
-        if os.path.exists(credPath):
+        envToken = os.getenv("GToken", None)
+        if envToken:
+            logger.debug('GmailMgr.__init__: Loading existing token from environment variable GToken')
+            self.gCred = Credentials.from_authorized_user_info(json.loads(envToken), SCOPES)
+        if not self.gCred and os.path.exists(credPath):
             logger.debug('GmailMgr.__init__: Loading existing token from {file}', file=credPath)
             self.gCred = Credentials.from_authorized_user_file(credPath, SCOPES)
         self.credPath = credPath
@@ -68,12 +73,6 @@ class GmailMgr:
                         logger.debug('GmailMgr.download_attachments: Saved {msgid} attachment to {file}', msgid=msg['id'], file=filePath)
                         continue
                     logger.warning('GmailMgr.download_attachments: attachment already existed for {file}', file=filePath)
-
-        # if os.path.isdir(tempDir):
-        #     for f in os.listdir(tempDir):
-        #         os.remove(os.path.join(tempDir, f))
-        #     os.rmdir(tempDir)
-        #     logger.debug('GmailMgr.download_attachments: Cleaned up temp dir: {dir}', dir=tempDir)
 
     def __write_token(self):
         with open(self.credPath, "w") as writer:
