@@ -20,9 +20,9 @@ class GmailMgr:
     oAuthPath: str = None
 
     def __init__(self, oAuthPath: str = "OAuth.json", credPath: str = "GToken.json"):
-        envToken = os.getenv("GToken", None)
+        envToken = os.getenv("GTOKEN", None)
         if envToken:
-            logger.debug('GmailMgr.__init__: Loading existing token from environment variable GToken')
+            logger.debug('GmailMgr.__init__: Loading existing token from environment variable GTOKEN')
             self.gCred = Credentials.from_authorized_user_info(json.loads(envToken), SCOPES)
         if not self.gCred and os.path.exists(credPath):
             logger.debug('GmailMgr.__init__: Loading existing token from {file}', file=credPath)
