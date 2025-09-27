@@ -7,6 +7,7 @@ from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from sentry_sdk import logger
 
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
@@ -20,13 +21,14 @@ class GmailMgr:
     oAuthPath: str = None
 
     def __init__(self, oAuthPath: str = "OAuth.json", credPath: str = "GToken.json"):
-        envToken = os.getenv("GToken", None)
+        envToken = os.getenv("GTOKEN", None)
         if envToken:
-            logger.debug('GmailMgr.__init__: Loading existing token from environment variable GToken')
+            logger.debug('GmailMgr.__init__: Loading existing token from environment variable GTOKEN')
             self.gCred = Credentials.from_authorized_user_info(json.loads(envToken), SCOPES)
         if not self.gCred and os.path.exists(credPath):
             logger.debug('GmailMgr.__init__: Loading existing token from {file}', file=credPath)
             self.gCred = Credentials.from_authorized_user_file(credPath, SCOPES)
+
         self.credPath = credPath
         self.oAuthPath = oAuthPath
 
@@ -52,8 +54,9 @@ class GmailMgr:
         if not os.path.isdir(tempDir):
             os.mkdir(tempDir)
 
-        dNow = datetime.now()
-        searchParam = f"from:orders@doordash.com has:attachment after:{math.ceil((datetime(dNow.year, dNow.month, dNow.day, 0, 0, 0)).timestamp())}"
+        tz = ZoneInfo("America/New_York")
+        dNow = datetime.now(tz)
+        searchParam = f"from:orders@doordash.com has:attachment after:{math.ceil((datetime(dNow.year, dNow.month, dNow.day, 0, 0, 0, tzinfo=tz)).timestamp())}"
         gmailTool = build('gmail', 'v1', credentials=self.gCred)
 
         logger.info("GmailMgr.download_attachments: Searching emails with query: {param}", param=searchParam)

@@ -15,7 +15,15 @@ class DDPDFParser:
 
         for f in os.listdir(DirPath):
             if f.endswith(".pdf"):
-                self.PDFData.append(self.parseFile(os.path.join(DirPath, f)))
+                fileData = self.parseFile(os.path.join(DirPath, f))
+                self.PDFData.append(fileData)
+                logger.info("DDPDFParser.parseFile: Parsed {orderID} ({customerName}) with {pageNum} pages. Subtotal: ${sub} | Tax: ${tax} | Total: ${tot}",
+                            orderID=fileData["orderID"],
+                            customerName=fileData["name"],
+                            pageNum=fileData["pageLen"],
+                            sub=fileData["subtotal"],
+                            tax=fileData["tax"],
+                            tot=fileData["total"])
 
         if delProcFile and os.path.isdir(DirPath):
             for f in os.listdir(DirPath):
@@ -27,24 +35,22 @@ class DDPDFParser:
 
     def parseFile(self, filePath: str) -> dict:
         doc = pymupdf.open(filePath)
-        data = {"orderID": "0000000000", "subtotal": 0.0, "tax": 0.0, "total": 0.0}
+        headerText = doc[0].get_text().split("\n")
+        data = {"orderID": "0000000000", "pageLen": doc.page_count, "name": "John Doe", "subtotal": 0.0, "tax": 0.0, "total": 0.0}
 
         # Parse Order Number (format: "Order Number: deadbeef")
-        headerText = doc[0].get_text().split("\n")
         orderIDIndex = next((i for i, w in enumerate(headerText) if "Order Number:" in w), -1)
         data["orderID"] = headerText[orderIDIndex].split(":")[1].strip()
+
+        # Parse Customer Name (format: "John D.") (Due to content order, name is 3 index away)
+        nameIndex = next((i for i, w in enumerate(headerText) if "Customer" in w), -1)
+        data["name"] = headerText[nameIndex + 3].strip() if nameIndex != -1 else "NULL"
 
         if (doc.page_count == 1):
             # Parse everything in that one page
             data["subtotal"] = self.__computeSubtotal(headerText)
             data["tax"] = self.__computeTax(headerText)
             data["total"] = self.__computeTotal(headerText)
-            logger.info("DDPDFParser.parseFile: Parsed {orderID} with {pageNum} pages. Subtotal: ${sub} | Tax: ${tax} | Total: ${tot}",
-                        orderID=data["orderID"],
-                        pageNum=1,
-                        sub=data["subtotal"],
-                        tax=data["tax"],
-                        tot=data["total"])
             return data
 
         # Parse multi-page (2+)
@@ -57,13 +63,6 @@ class DDPDFParser:
         data["subtotal"] = tempSub if tempSub != -1 else self.__computeSubtotal(PricePageB)
         data["tax"] = tempTax if tempTax != -1 else self.__computeTax(PricePageB)
         data["total"] = tempTot if tempTot != -1 else self.__computeTotal(PricePageB)
-
-        logger.info("DDPDFParser.parseFile: Parsed {orderID} with {pageNum} pages. Subtotal: ${sub} | Tax: ${tax} | Total: ${tot}",
-                    orderID=data["orderID"],
-                    pageNum=doc.page_count,
-                    sub=data["subtotal"],
-                    tax=data["tax"],
-                    tot=data["total"])
         return data
 
     def computeTotals(self) -> dict:
