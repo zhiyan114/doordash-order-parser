@@ -7,6 +7,7 @@ from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from sentry_sdk import logger
 
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
@@ -53,7 +54,7 @@ class GmailMgr:
         if not os.path.isdir(tempDir):
             os.mkdir(tempDir)
 
-        dNow = datetime.now()
+        dNow = datetime.now(ZoneInfo("America/New_York"))
         searchParam = f"from:orders@doordash.com has:attachment after:{math.ceil((datetime(dNow.year, dNow.month, dNow.day, 0, 0, 0)).timestamp())}"
         gmailTool = build('gmail', 'v1', credentials=self.gCred)
 
