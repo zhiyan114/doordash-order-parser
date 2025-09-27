@@ -27,6 +27,7 @@ class GmailMgr:
         if not self.gCred and os.path.exists(credPath):
             logger.debug('GmailMgr.__init__: Loading existing token from {file}', file=credPath)
             self.gCred = Credentials.from_authorized_user_file(credPath, SCOPES)
+
         self.credPath = credPath
         self.oAuthPath = oAuthPath
 

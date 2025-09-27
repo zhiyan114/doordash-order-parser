@@ -4,6 +4,7 @@ import dotenv
 import os
 import asyncio
 import discord
+import sys
 from sentry_sdk.types import Log, Hint
 from sentry_sdk import logger, capture_exception
 from gmailMGR import GmailMgr
@@ -16,7 +17,7 @@ botMGR = BotManager()
 
 
 def log_handler(log: Log, hint: Hint):
-    print(log["body"])
+    print(log["body"], file=sys.stdout, flush=True)
     return log
 
 
