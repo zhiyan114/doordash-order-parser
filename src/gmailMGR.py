@@ -54,8 +54,9 @@ class GmailMgr:
         if not os.path.isdir(tempDir):
             os.mkdir(tempDir)
 
-        dNow = datetime.now(ZoneInfo("America/New_York"))
-        searchParam = f"from:orders@doordash.com has:attachment after:{math.ceil((datetime(dNow.year, dNow.month, dNow.day, 0, 0, 0)).timestamp())}"
+        tz = ZoneInfo("America/New_York")
+        dNow = datetime.now(tz)
+        searchParam = f"from:orders@doordash.com has:attachment after:{math.ceil((datetime(dNow.year, dNow.month, dNow.day, 0, 0, 0, tzinfo=tz)).timestamp())}"
         gmailTool = build('gmail', 'v1', credentials=self.gCred)
 
         logger.info("GmailMgr.download_attachments: Searching emails with query: {param}", param=searchParam)
