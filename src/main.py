@@ -25,7 +25,7 @@ async def generate(interaction: discord.Interaction):
     try:
         await interaction.response.defer()
 
-        logger.info("{username} requested Doordash Financial Report", username=interaction.user.name)
+        logger.info("botMGR.tree.command.generate: {username} requested Doordash Financial Report", username=interaction.user.name)
         mailMgr = GmailMgr()
         parserMgr = DDPDFParser()
         mailMgr.fetch_token()

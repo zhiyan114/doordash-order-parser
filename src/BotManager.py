@@ -15,7 +15,7 @@ class BotManager(discord.Client):
         logger.info('BotManager.on_ready: Bot {botUser} initialized!', botUser=self.user)
         guildID = os.getenv("DISCORD_GUILD_ID")
         await self.tree.sync(guild=discord.utils.get(self.guilds, id=guildID))
-        logger.info("Slash Command Synced with guild: {guild_id}", guild_id=guildID)
+        logger.info("BotManager.on_ready: Slash Command Synced with guild: {guild_id}", guild_id=guildID)
 
     def createReportEmbed(self, computedData: dict):
         embed = discord.Embed(
