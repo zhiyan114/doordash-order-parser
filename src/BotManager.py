@@ -20,7 +20,7 @@ class BotManager(discord.Client):
     def createReportEmbed(self, computedData: dict):
         embed = discord.Embed(
             title="Doordash Financial Report",
-            description="Today's doordash financial report",
+            description=f"Processed `{computedData["orderCnt"]}` orders",
             color=0x00FFFF
         )
         embed.add_field(name="Subtotal", value=f"${computedData["subtotal"]}")

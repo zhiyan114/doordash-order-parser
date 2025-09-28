@@ -66,8 +66,9 @@ class DDPDFParser:
         return data
 
     def computeTotals(self) -> dict:
-        data = {"subtotal": 0.0, "tax": 0.0, "total": 0.0}
+        data = {"orderCnt": 0, "subtotal": 0.0, "tax": 0.0, "total": 0.0}
         for item in self.PDFData:
+            data["orderCnt"] += 1
             data["subtotal"] += item.get("subtotal", 0)
             data["tax"] += item.get("tax", 0)
             data["total"] += item.get("total", 0)
