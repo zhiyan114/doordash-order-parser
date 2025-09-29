@@ -8,6 +8,9 @@ class DDPDFParser:
     # Contains order ID, subtotal, tax, and total
     PDFData = []
 
+    def __init__(self):
+        self.PDFData = []
+
     def parseDir(self, DirPath: str = "./temp", delProcFile: bool = False) -> list:
         if not os.path.isdir(DirPath):
             logger.warn('DDPDFParser.parseDir: Missing directory: {dir}', dir=DirPath)
