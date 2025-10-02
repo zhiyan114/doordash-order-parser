@@ -44,12 +44,12 @@ class BotManager(discord.Client):
             logger.error("BotManager.sendMailReport: Mailgun client not initialized. Missing API Key or Domain?")
             return
         
-        #email = email.strip().split(",")
+        email = email.strip().split(",")
         date = datetime.datetime.now(ZoneInfo("America/New_York")).strftime("%m/%d/%Y")
 
         logger.info("BotManager.sendMailReport: Sending email report")
         req = self.MGClient.messages.create(data={
-            "from": f"DoorDash Parser <DDParser@{self.mailDNS}",
+            "from": f"DoorDash Parser <DDParser@{self.mailDNS}>",
             "to": email,
             "subject": f"{date} Doordash Financial Report",
             "body": f"Today's Doordash Report\nTotal Orders:{computedData["orderCnt"]}\nSubtotal:{computedData["subtotal"]}\nTax:{computedData["tax"]}\nTotal:{computedData["total"]}"
