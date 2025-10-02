@@ -53,6 +53,6 @@ class BotManager(discord.Client):
             "from": f"DoorDash Parser <DDParser@{self.mailDNS}>",
             "to": email,
             "subject": f"{date} Doordash Financial Report",
-            "text": f"Today's Doordash Report\nTotal Orders:{computedData["orderCnt"]}\nSubtotal: ${computedData["subtotal"]}\nTax: ${computedData["tax"]}\nTotal: ${computedData["total"]}"
+            "text": f"Today's Doordash Report\nTotal Orders: {computedData["orderCnt"]}\nSubtotal: ${computedData["subtotal"]}\nTax: ${computedData["tax"]}\nTotal: ${computedData["total"]}"
         }, domain=self.mailDNS)
         logger.info("BotManager.sendMailReport: Mailgun API Response -> {res}", res=req.text)

@@ -14,6 +14,6 @@ req = client.messages.create(data={
     "from": f"DoorDash Parser <DDParser@{mailDNS}>",
     "to": email,
     "subject": f"{date} Doordash Financial Report",
-    "text": f"Today's Doordash Report\nTotal Orders: ${100}\nSubtotal: ${12}\nTax: ${12}\nTotal: ${24}"
+    "text": f"Today's Doordash Report\nTotal Orders: {100}\nSubtotal: ${12}\nTax: ${12}\nTotal: ${24}"
 }, domain=mailDNS)
 print(f"BotManager.sendMailReport: Mailgun API Response -> {req.text}")
