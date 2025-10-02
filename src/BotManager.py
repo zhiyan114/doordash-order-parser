@@ -48,12 +48,13 @@ class BotManager(discord.Client):
         date = datetime.datetime.now(ZoneInfo("America/New_York")).strftime("%m/%d/%Y")
 
         logger.info("BotManager.sendMailReport: Sending email report")
-        self.MGClient.messages.create(data={
+        req = self.MGClient.messages.create(data={
             "from": f"DoorDash Parser <DDParser@{self.mailDNS}",
             "to": email,
             "subject": f"{date} Doordash Financial Report",
             "body": f"Today's Doordash Report\nTotal Orders:{computedData["orderCnt"]}\nSubtotal:{computedData["subtotal"]}\nTax:{computedData["tax"]}\nTotal:{computedData["total"]}"
         },domain=self.mailDNS)
+        logger.log("BotManager.sendMailReport: Mailgun API Response -> {res}", res=req.json())
 
         
         
