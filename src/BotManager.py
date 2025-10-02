@@ -44,7 +44,7 @@ class BotManager(discord.Client):
             logger.error("BotManager.sendMailReport: Mailgun client not initialized. Missing API Key or Domain?")
             return
         
-        email = email.strip().split(",")
+        #email = email.strip().split(",")
         date = datetime.datetime.now(ZoneInfo("America/New_York")).strftime("%m/%d/%Y")
 
         logger.info("BotManager.sendMailReport: Sending email report")
