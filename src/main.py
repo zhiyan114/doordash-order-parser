@@ -1,18 +1,20 @@
 import logging
-import sentry_sdk
 import dotenv
 import os
 import asyncio
 import discord
 import sys
+import sentry_sdk
+from sentry_sdk.integrations.logging import SentryLogsHandler, LoggingIntegration
 from sentry_sdk.types import Log, Hint
-from sentry_sdk import logger, capture_exception
+from sentry_sdk import logger, capture_exception, monitor
+from sentry_sdk.crons import monitor
 from gmailMGR import GmailMgr
 from PDFParse import DDPDFParser
 from BotManager import BotManager
-from sentry_sdk.integrations.logging import SentryLogsHandler
-from sentry_sdk.integrations.logging import LoggingIntegration
+import schedule
 
+dotenv.load_dotenv()
 botMGR = BotManager()
 
 
@@ -41,13 +43,23 @@ async def generate(interaction: discord.Interaction, email: str = None):
     except Exception as ex:
         capture_exception(ex)
 
+@monitor('automated-email-report')
+def scheduleJob():
+    logger.debug("main.py (scheduleJob): cron job invoked")
+    mailMgr = GmailMgr()
+    parserMgr = DDPDFParser()
+    mailMgr.fetch_token()
+    mailMgr.download_attachments()
+    parserMgr.parseDir(delProcFile=True)
+    if (botMGR.MGClient):
+        botMGR.sendMailReport(parserMgr.computeTotals())
+
 
 async def main():
     discord.utils.setup_logging(handler=SentryLogsHandler(level=logging.DEBUG))
     await botMGR.start(os.getenv("DISCORD_TOKEN", None))
 
 if __name__ == "__main__":
-    dotenv.load_dotenv()
     sentry_sdk.init(
         dsn=os.getenv("SENTRY_DSN", "http://dead@localhost/0000000"),
         traces_sample_rate=0.0,
@@ -59,4 +71,5 @@ if __name__ == "__main__":
             LoggingIntegration()
         ]
     )
+    schedule.every().day.at("22:00", "America/New_York").do(scheduleJob)
     asyncio.run(main())
