@@ -54,7 +54,7 @@ class BotManager(discord.Client):
             "subject": f"{date} Doordash Financial Report",
             "body": f"Today's Doordash Report\nTotal Orders:{computedData["orderCnt"]}\nSubtotal:{computedData["subtotal"]}\nTax:{computedData["tax"]}\nTotal:{computedData["total"]}"
         },domain=self.mailDNS)
-        logger.log("BotManager.sendMailReport: Mailgun API Response -> {res}", res=req.json())
+        logger.log("BotManager.sendMailReport: Mailgun API Response -> {res}", res=req.text)
 
         
         
