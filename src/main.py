@@ -23,7 +23,7 @@ def log_handler(log: Log, hint: Hint):
 
 @botMGR.tree.command(name="generate", description="Generate today's doordash Financial Report")
 @discord.app_commands.describe(email="Email Address to send the report to (comma for multiple)")
-async def generate(interaction: discord.Interaction):
+async def generate(interaction: discord.Interaction, email: str = None):
     try:
         await interaction.response.defer()
 
@@ -33,8 +33,11 @@ async def generate(interaction: discord.Interaction):
         mailMgr.fetch_token()
         mailMgr.download_attachments()
         parserMgr.parseDir(delProcFile=True)
+        report = parserMgr.computeTotals()
 
-        await interaction.followup.send(embed=botMGR.createReportEmbed(parserMgr.computeTotals()))
+        if (email):
+            botMGR.sendMailReport(report,email)
+        await interaction.followup.send(embed=botMGR.createReportEmbed(report))
     except Exception as ex:
         capture_exception(ex)
 

@@ -46,6 +46,8 @@ class BotManager(discord.Client):
         
         email = email.strip().split(",")
         date = datetime.datetime.now(ZoneInfo("America/New_York")).strftime("%m/%d/%Y")
+
+        logger.info("BotManager.sendMailReport: Sending email report")
         self.MGClient.messages.create(data={
             "from": f"DoorDash Parser <DDParser@{self.mailDNS}",
             "to": email,
