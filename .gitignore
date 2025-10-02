@@ -4,3 +4,4 @@ OAuth.json
 temp/
 __pycache__/
 .env
+*.pdf

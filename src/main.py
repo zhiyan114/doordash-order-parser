@@ -22,6 +22,7 @@ def log_handler(log: Log, hint: Hint):
 
 
 @botMGR.tree.command(name="generate", description="Generate today's doordash Financial Report")
+@discord.app_commands.describe(email="Email Address to send the report to (comma for multiple)")
 async def generate(interaction: discord.Interaction):
     try:
         await interaction.response.defer()
