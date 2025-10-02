@@ -13,7 +13,7 @@ class BotManager(discord.Client):
         self.tree = app_commands.CommandTree(self)
 
         # Initialize mailgun client
-        MGKey = os.getenv("MAILGUN_API_KEY", None)
+        MGKey = os.getenv("MAILGUN_KEY", None)
         self.mailDNS = os.getenv("MAILGUN_DNS", None)
         self.MGClient = Client(auth=("api", MGKey)) if MGKey and self.mailDNS else None
 
