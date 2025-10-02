@@ -6,6 +6,7 @@ from sentry_sdk import logger
 from discord import app_commands
 from mailgun.client import Client
 
+
 class BotManager(discord.Client):
     def __init__(self):
         intents = discord.Intents.default()
@@ -16,7 +17,6 @@ class BotManager(discord.Client):
         MGKey = os.getenv("MAILGUN_KEY", None)
         self.mailDNS = os.getenv("MAILGUN_DNS", None)
         self.MGClient = Client(auth=("api", MGKey)) if MGKey and self.mailDNS else None
-
 
     async def on_ready(self):
         logger.info('BotManager.on_ready: Bot {botUser} initialized!', botUser=self.user)
@@ -35,15 +35,16 @@ class BotManager(discord.Client):
         embed.add_field(name="Total", value=f"${computedData["total"]}")
         embed.timestamp = datetime.datetime.now(datetime.timezone.utc)
         return embed
+
     def sendMailReport(self, computedData: dict, email: str = None):
-        email = email or os.getenv("CRON_EMAIL",None)
+        email = email or os.getenv("CRON_EMAIL", None)
         if not email:
             logger.error("BotManager.sendMailReport: No email provided for report.")
             return
         if not self.MGClient:
             logger.error("BotManager.sendMailReport: Mailgun client not initialized. Missing API Key or Domain?")
             return
-        
+
         email = email.strip().split(",")
         date = datetime.datetime.now(ZoneInfo("America/New_York")).strftime("%m/%d/%Y")
 
@@ -52,9 +53,6 @@ class BotManager(discord.Client):
             "from": f"DoorDash Parser <DDParser@{self.mailDNS}>",
             "to": email,
             "subject": f"{date} Doordash Financial Report",
-            "body": f"Today's Doordash Report\nTotal Orders:{computedData["orderCnt"]}\nSubtotal:{computedData["subtotal"]}\nTax:{computedData["tax"]}\nTotal:{computedData["total"]}"
-        },domain=self.mailDNS)
-        logger.log("BotManager.sendMailReport: Mailgun API Response -> {res}", res=req.text)
-
-        
-        
+            "text": f"Today's Doordash Report\nTotal Orders:{computedData["orderCnt"]}\nSubtotal: ${computedData["subtotal"]}\nTax: ${computedData["tax"]}\nTotal: ${computedData["total"]}"
+        }, domain=self.mailDNS)
+        logger.info("BotManager.sendMailReport: Mailgun API Response -> {res}", res=req.text)

@@ -8,7 +8,6 @@ import sentry_sdk
 from sentry_sdk.integrations.logging import SentryLogsHandler, LoggingIntegration
 from sentry_sdk.types import Log, Hint
 from sentry_sdk import logger, capture_exception, monitor
-from sentry_sdk.crons import monitor
 from gmailMGR import GmailMgr
 from PDFParse import DDPDFParser
 from BotManager import BotManager
@@ -38,10 +37,11 @@ async def generate(interaction: discord.Interaction, email: str = None):
         report = parserMgr.computeTotals()
 
         if (email):
-            botMGR.sendMailReport(report,email)
+            botMGR.sendMailReport(report, email)
         await interaction.followup.send(embed=botMGR.createReportEmbed(report))
     except Exception as ex:
         capture_exception(ex)
+
 
 @monitor('automated-email-report')
 def scheduleJob():
