@@ -4,14 +4,17 @@ import os
 import asyncio
 import discord
 import sys
+import schedule
+import threading
 import sentry_sdk
+import time
 from sentry_sdk.integrations.logging import SentryLogsHandler, LoggingIntegration
 from sentry_sdk.types import Log, Hint
 from sentry_sdk import logger, capture_exception, monitor
 from gmailMGR import GmailMgr
 from PDFParse import DDPDFParser
 from BotManager import BotManager
-import schedule
+
 
 dotenv.load_dotenv()
 botMGR = BotManager()
@@ -55,6 +58,12 @@ def scheduleJob():
         botMGR.sendMailReport(parserMgr.computeTotals())
 
 
+def scheduleRun():
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
+
+
 async def main():
     discord.utils.setup_logging(handler=SentryLogsHandler(level=logging.DEBUG))
     await botMGR.start(os.getenv("DISCORD_TOKEN", None))
@@ -72,4 +81,6 @@ if __name__ == "__main__":
         ]
     )
     schedule.every().day.at("21:50", "America/New_York").do(scheduleJob)
+    thread = threading.Thread(target=scheduleRun, daemon=True)
+    thread.start()
     asyncio.run(main())
