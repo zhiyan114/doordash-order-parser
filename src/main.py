@@ -71,5 +71,5 @@ if __name__ == "__main__":
             LoggingIntegration()
         ]
     )
-    schedule.every().day.at("22:00", "America/New_York").do(scheduleJob)
+    schedule.every().day.at("21:50", "America/New_York").do(scheduleJob)
     asyncio.run(main())
