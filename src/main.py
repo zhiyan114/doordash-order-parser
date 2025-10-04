@@ -56,6 +56,7 @@ def scheduleJob():
     parserMgr.parseDir(delProcFile=True)
     if (botMGR.MGClient):
         botMGR.sendMailReport(parserMgr.computeTotals())
+        logger.info("main.py (scheduleJob): automated email report sent")
 
 
 def scheduleRun():
