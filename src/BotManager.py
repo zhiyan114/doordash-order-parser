@@ -42,7 +42,7 @@ class BotManager(discord.Client):
             logger.error("BotManager.sendMailReport: No email provided for report.")
             return
         if not self.MSClient:
-            logger.error("BotManager.sendMailReport: Mailgun client not initialized. Missing API Key or Domain?")
+            logger.error("BotManager.sendMailReport: MailService client not initialized. Missing API Key or Domain?")
             return
 
         email = email.strip().split(",")
