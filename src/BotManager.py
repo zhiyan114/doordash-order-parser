@@ -4,7 +4,7 @@ import datetime
 from zoneinfo import ZoneInfo
 from sentry_sdk import logger
 from discord import app_commands
-from mailgun.client import Client
+from MailService import MailService
 
 
 class BotManager(discord.Client):
@@ -14,9 +14,9 @@ class BotManager(discord.Client):
         self.tree = app_commands.CommandTree(self)
 
         # Initialize mailgun client
-        MGKey = os.getenv("MAILGUN_KEY", None)
+        MSKey = os.getenv("MAILSERVICE_KEY", None)
         self.mailDNS = os.getenv("MAILGUN_DNS", None)
-        self.MGClient = Client(auth=("api", MGKey)) if MGKey and self.mailDNS else None
+        self.MSClient = MailService(MSKey) if MSKey and self.mailDNS else None
 
     async def on_ready(self):
         logger.info('BotManager.on_ready: Bot {botUser} initialized!', botUser=self.user)
@@ -41,18 +41,18 @@ class BotManager(discord.Client):
         if not email:
             logger.error("BotManager.sendMailReport: No email provided for report.")
             return
-        if not self.MGClient:
-            logger.error("BotManager.sendMailReport: Mailgun client not initialized. Missing API Key or Domain?")
+        if not self.MSClient:
+            logger.error("BotManager.sendMailReport: MailService client not initialized. Missing API Key or Domain?")
             return
 
         email = email.strip().split(",")
         date = datetime.datetime.now(ZoneInfo("America/New_York")).strftime("%m/%d/%Y")
 
         logger.info("BotManager.sendMailReport: Sending email report")
-        req = self.MGClient.messages.create(data={
-            "from": f"DoorDash Parser <DDParser@{self.mailDNS}>",
+        req = self.MSClient.sendMail(opt={
+            "from": f"DoorDash Parser <noreply@{self.mailDNS}>",
             "to": email,
             "subject": f"{date} Doordash Financial Report",
             "text": f"Today's Doordash Report\nTotal Orders: {computedData["orderCnt"]}\nSubtotal: ${computedData["subtotal"]}\nTax: ${computedData["tax"]}\nTotal: ${computedData["total"]}"
-        }, domain=self.mailDNS)
+        })
         logger.info("BotManager.sendMailReport: Mailgun API Response -> {res}", res=req.text)

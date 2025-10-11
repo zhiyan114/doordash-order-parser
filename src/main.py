@@ -55,7 +55,11 @@ def scheduleJob():
     mailMgr.download_attachments()
     parserMgr.parseDir(delProcFile=True)
     if (botMGR.MGClient):
-        botMGR.sendMailReport(parserMgr.computeTotals())
+        res = parserMgr.computeTotals()
+        if (res["orderCnt"] == 0):
+            logger.info("main.py (scheduleJob): No orders are found for the day, skipping email report")
+            return
+        botMGR.sendMailReport(res)
         logger.info("main.py (scheduleJob): automated email report sent")
 
 
