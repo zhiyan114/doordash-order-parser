@@ -14,9 +14,9 @@ class BotManager(discord.Client):
         self.tree = app_commands.CommandTree(self)
 
         # Initialize mailgun client
-        MGKey = os.getenv("MAILSERVICE_KEY", None)
+        MSKey = os.getenv("MAILSERVICE_KEY", None)
         self.mailDNS = os.getenv("MAILGUN_DNS", None)
-        self.MGClient = MailService(auth=("api", MGKey)) if MGKey and self.mailDNS else None
+        self.MSClient = MailService(MSKey) if MSKey and self.mailDNS else None
 
     async def on_ready(self):
         logger.info('BotManager.on_ready: Bot {botUser} initialized!', botUser=self.user)
@@ -41,7 +41,7 @@ class BotManager(discord.Client):
         if not email:
             logger.error("BotManager.sendMailReport: No email provided for report.")
             return
-        if not self.MGClient:
+        if not self.MSClient:
             logger.error("BotManager.sendMailReport: Mailgun client not initialized. Missing API Key or Domain?")
             return
 
@@ -49,7 +49,7 @@ class BotManager(discord.Client):
         date = datetime.datetime.now(ZoneInfo("America/New_York")).strftime("%m/%d/%Y")
 
         logger.info("BotManager.sendMailReport: Sending email report")
-        req = self.MGClient.sendMail(opt={
+        req = self.MSClient.sendMail(opt={
             "from": f"DoorDash Parser <noreply@{self.mailDNS}>",
             "to": email,
             "subject": f"{date} Doordash Financial Report",
