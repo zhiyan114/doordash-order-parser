@@ -55,4 +55,4 @@ class BotManager(discord.Client):
             "subject": f"{date} Doordash Financial Report",
             "text": f"Today's Doordash Report\nTotal Orders: {computedData["orderCnt"]}\nSubtotal: ${computedData["subtotal"]}\nTax: ${computedData["tax"]}\nTotal: ${computedData["total"]}"
         })
-        logger.info("BotManager.sendMailReport: Mailgun API Response -> {res}", res=req.text)
+        logger.info("BotManager.sendMailReport: MailService API Response -> {res}", res=req if type(req) is str else req['message'])
