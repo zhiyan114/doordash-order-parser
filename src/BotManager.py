@@ -48,7 +48,7 @@ class BotManager(discord.Client):
         email = email.strip().split(",")
         date = datetime.datetime.now(ZoneInfo("America/New_York")).strftime("%m/%d/%Y")
 
-        with open("templates/email_report.html", 'r') as f:
+        with open("./templates/email_report.html", 'r') as f:
             # Prepare Content
             content = f.read()
             content.replace("{count}", computedData["orderCnt"])
