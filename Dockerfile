@@ -15,6 +15,7 @@ ENV SENTRY_ENVIRONMENT=${SENTRY_ENVIRONMENT}
 
 # Copy Source and setup
 COPY ./src/* ./
+COPY ./templates ./
 COPY ./requirements.txt ./requirements.txt
 RUN python -m pip install --upgrade -r requirements.txt
 

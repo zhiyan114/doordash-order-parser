@@ -48,11 +48,20 @@ class BotManager(discord.Client):
         email = email.strip().split(",")
         date = datetime.datetime.now(ZoneInfo("America/New_York")).strftime("%m/%d/%Y")
 
-        logger.info("BotManager.sendMailReport: Sending email report")
-        req = self.MSClient.sendMail(opt={
-            "from": f"DoorDash Parser <noreply@{self.mailDNS}>",
-            "to": email,
-            "subject": f"{date} Doordash Financial Report",
-            "text": f"Today's Doordash Report\nTotal Orders: {computedData["orderCnt"]}\nSubtotal: ${computedData["subtotal"]}\nTax: ${computedData["tax"]}\nTotal: ${computedData["total"]}"
-        })
-        logger.info("BotManager.sendMailReport: MailService API Response -> {res}", res=req if type(req) is str else req['message'])
+        with open("templates/email_report.html", 'r') as f:
+            # Prepare Content
+            content = f.read()
+            content.replace("{count}", computedData["orderCnt"])
+            content.replace("{subtotal}", computedData["subtotal"])
+            content.replace("{tax}", computedData["tax"])
+            content.replace("{total}", computedData["total"])
+
+            # Send Content
+            logger.info("BotManager.sendMailReport: Sending email report")
+            req = self.MSClient.sendMail(opt={
+                "from": f"DoorDash Parser <noreply@{self.mailDNS}>",
+                "to": email,
+                "subject": f"{date} Doordash Financial Report",
+                "html": content
+            })
+            logger.info("BotManager.sendMailReport: MailService API Response -> {res}", res=req if type(req) is str else req['message'])
