@@ -51,10 +51,10 @@ class BotManager(discord.Client):
         with open("./templates/email_report.html", 'r') as f:
             # Prepare Content
             content = f.read()
-            content.replace("{count}", computedData["orderCnt"])
-            content.replace("{subtotal}", computedData["subtotal"])
-            content.replace("{tax}", computedData["tax"])
-            content.replace("{total}", computedData["total"])
+            content.replace("{count}", str(computedData["orderCnt"]))
+            content.replace("{subtotal}", str(computedData["subtotal"]))
+            content.replace("{tax}", str(computedData["tax"]))
+            content.replace("{total}", str(computedData["total"]))
 
             # Send Content
             logger.info("BotManager.sendMailReport: Sending email report")
