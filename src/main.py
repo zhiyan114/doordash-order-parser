@@ -80,7 +80,7 @@ if __name__ == "__main__":
         send_default_pii=True,
         enable_logs=True,
         before_send_log=log_handler,
-        default_integrations=False,
+        default_integrations=True,
         disabled_integrations=[
             LoggingIntegration()
         ]
