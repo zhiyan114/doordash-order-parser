@@ -51,6 +51,7 @@ class BotManager(discord.Client):
         with open("./templates/email_report.html", 'r') as f:
             # Prepare Content
             content = f.read()
+            content = content.replace("{date}", date)
             content = content.replace("{count}", str(computedData["orderCnt"]))
             content = content.replace("{subtotal}", str(computedData["subtotal"]))
             content = content.replace("{tax}", str(computedData["tax"]))
