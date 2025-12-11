@@ -1,4 +1,8 @@
-FROM python:3.13.7-slim-bookworm
+FROM python:3.14-slim-bookworm
+
+# Install packages
+RUN apt-get update
+RUN apt-get install gcc -y
 
 # Configure Environment Variable
 WORKDIR /source/
