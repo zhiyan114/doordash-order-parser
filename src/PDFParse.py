@@ -54,6 +54,7 @@ class DDPDFParser:
             data["subtotal"] = self.__computeSubtotal(headerText)
             data["tax"] = self.__computeTax(headerText)
             data["total"] = self.__computeTotal(headerText)
+            doc.close()
             return data
 
         # Parse multi-page (2+)
@@ -66,6 +67,8 @@ class DDPDFParser:
         data["subtotal"] = tempSub if tempSub != -1 else self.__computeSubtotal(PricePageB)
         data["tax"] = tempTax if tempTax != -1 else self.__computeTax(PricePageB)
         data["total"] = tempTot if tempTot != -1 else self.__computeTotal(PricePageB)
+
+        doc.close()
         return data
 
     def computeTotals(self) -> dict:
