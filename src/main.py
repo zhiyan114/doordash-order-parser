@@ -33,7 +33,7 @@ async def generate(interaction: discord.Interaction, email: str = None):
             "id": interaction.user,
             "username": interaction.user.global_name
         })
-        with sentry_sdk.start_transaction(op="cron", name="Cron Processed Report"):
+        with sentry_sdk.start_transaction(op="cmd", name="User Requested Report"):
             try:
                 await interaction.response.defer()
 
@@ -54,7 +54,7 @@ async def generate(interaction: discord.Interaction, email: str = None):
 
 @monitor('automated-email-report')
 def scheduleJob():
-    with sentry_sdk.start_transaction(op="cmd", name="User Requested Report"):
+    with sentry_sdk.start_transaction(op="cron", name="Cron Processed Report"):
         logger.debug("main.py (scheduleJob): cron job invoked")
         mailMgr = GmailMgr()
         parserMgr = DDPDFParser()
