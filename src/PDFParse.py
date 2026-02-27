@@ -1,7 +1,7 @@
 import os
 import copy
 import pymupdf
-from sentry_sdk import logger
+from sentry_sdk import get_current_span, logger, trace
 
 
 class DDPDFParser:
@@ -11,6 +11,7 @@ class DDPDFParser:
     def __init__(self):
         self.PDFData = []
 
+    @trace(op="parseDir", name="Process PDF File Dir")
     def parseDir(self, DirPath: str = "./temp", delProcFile: bool = False) -> list:
         if not os.path.isdir(DirPath):
             logger.warn('DDPDFParser.parseDir: Missing directory: {dir}', dir=DirPath)
@@ -36,40 +37,45 @@ class DDPDFParser:
 
         return copy.deepcopy(self.PDFData)
 
+    @trace(op="parseFile", name="Parse PDF File")
     def parseFile(self, filePath: str) -> dict:
-        doc = pymupdf.open(filePath)
-        headerText = doc[0].get_text().split("\n")
-        data = {"orderID": "0000000000", "pageLen": doc.page_count, "name": "John Doe", "subtotal": 0.0, "tax": 0.0, "total": 0.0}
+        with pymupdf.open(filePath) as doc:
+            headerText = doc[0].get_text().split("\n")
+            data = {"orderID": "0000000000", "pageLen": doc.page_count, "name": "John Doe", "subtotal": 0.0, "tax": 0.0, "total": 0.0}
 
-        # Parse Order Number (format: "Order Number: deadbeef")
-        orderIDIndex = next((i for i, w in enumerate(headerText) if "Order Number:" in w), -1)
-        data["orderID"] = headerText[orderIDIndex].split(":")[1].strip()
+            # Parse Order Number (format: "Order Number: deadbeef")
+            orderIDIndex = next((i for i, w in enumerate(headerText) if "Order Number:" in w), -1)
+            data["orderID"] = headerText[orderIDIndex].split(":")[1].strip()
 
-        # Parse Customer Name (format: "John D.") (Due to content order, name is 3 index away)
-        nameIndex = next((i for i, w in enumerate(headerText) if "Customer" in w), -1)
-        data["name"] = headerText[nameIndex + 3].strip() if nameIndex != -1 else "NULL"
+            # Parse Customer Name (format: "John D.") (Due to content order, name is 3 index away)
+            nameIndex = next((i for i, w in enumerate(headerText) if "Customer" in w), -1)
+            data["name"] = headerText[nameIndex + 3].strip() if nameIndex != -1 else "NULL"
 
-        if (doc.page_count == 1):
-            # Parse everything in that one page
-            data["subtotal"] = self.__computeSubtotal(headerText)
-            data["tax"] = self.__computeTax(headerText)
-            data["total"] = self.__computeTotal(headerText)
-            doc.close()
+            # Set Span Attributes
+            curSpan = get_current_span()
+            if (curSpan is not None):
+                curSpan.set_data("orderID", data["orderID"])
+                curSpan.set_data("customer_name", data["name"])
+
+            if (doc.page_count == 1):
+                # Parse everything in that one page
+                data["subtotal"] = self.__computeSubtotal(headerText)
+                data["tax"] = self.__computeTax(headerText)
+                data["total"] = self.__computeTotal(headerText)
+                return data
+
+            # Parse multi-page (2+)
+            PricePageA = doc[-2].get_text().split("\n")
+            PricePageB = doc[-1].get_text().split("\n")
+
+            tempSub = self.__computeSubtotal(PricePageA)
+            tempTax = self.__computeTax(PricePageA)
+            tempTot = self.__computeTotal(PricePageA)
+            data["subtotal"] = tempSub if tempSub != -1 else self.__computeSubtotal(PricePageB)
+            data["tax"] = tempTax if tempTax != -1 else self.__computeTax(PricePageB)
+            data["total"] = tempTot if tempTot != -1 else self.__computeTotal(PricePageB)
+
             return data
-
-        # Parse multi-page (2+)
-        PricePageA = doc[-2].get_text().split("\n")
-        PricePageB = doc[-1].get_text().split("\n")
-
-        tempSub = self.__computeSubtotal(PricePageA)
-        tempTax = self.__computeTax(PricePageA)
-        tempTot = self.__computeTotal(PricePageA)
-        data["subtotal"] = tempSub if tempSub != -1 else self.__computeSubtotal(PricePageB)
-        data["tax"] = tempTax if tempTax != -1 else self.__computeTax(PricePageB)
-        data["total"] = tempTot if tempTot != -1 else self.__computeTotal(PricePageB)
-
-        doc.close()
-        return data
 
     def computeTotals(self) -> dict:
         data = {"orderCnt": 0, "subtotal": 0.0, "tax": 0.0, "total": 0.0}

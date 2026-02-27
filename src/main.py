@@ -10,7 +10,7 @@ import sentry_sdk
 import time
 from sentry_sdk.integrations.logging import SentryLogsHandler, LoggingIntegration
 from sentry_sdk.types import Log, Hint
-from sentry_sdk import logger, capture_exception, monitor
+from sentry_sdk import isolation_scope, logger, capture_exception, monitor
 from gmailMGR import GmailMgr
 from PDFParse import DDPDFParser
 from BotManager import BotManager
@@ -28,39 +28,46 @@ def log_handler(log: Log, hint: Hint):
 @botMGR.tree.command(name="generate", description="Generate today's doordash Financial Report")
 @discord.app_commands.describe(email="Email Address to send the report to (comma for multiple)")
 async def generate(interaction: discord.Interaction, email: str = None):
-    try:
-        await interaction.response.defer()
+    with isolation_scope() as scope:
+        scope.set_user({
+            "id": interaction.user,
+            "username": interaction.user.global_name
+        })
+        with sentry_sdk.start_transaction(op="cron", name="Cron Processed Report"):
+            try:
+                await interaction.response.defer()
 
-        logger.info("botMGR.tree.command.generate: {username} requested Doordash Financial Report", username=interaction.user.name)
+                logger.info("botMGR.tree.command.generate: {username} requested Doordash Financial Report", username=interaction.user.name)
+                mailMgr = GmailMgr()
+                parserMgr = DDPDFParser()
+                mailMgr.fetch_token()
+                mailMgr.download_attachments()
+                parserMgr.parseDir(delProcFile=True)
+                report = parserMgr.computeTotals()
+
+                if (email):
+                    botMGR.sendMailReport(report, email)
+                await interaction.followup.send(embed=botMGR.createReportEmbed(report))
+            except Exception as ex:
+                capture_exception(ex)
+
+
+@monitor('automated-email-report')
+def scheduleJob():
+    with sentry_sdk.start_transaction(op="cmd", name="User Requested Report"):
+        logger.debug("main.py (scheduleJob): cron job invoked")
         mailMgr = GmailMgr()
         parserMgr = DDPDFParser()
         mailMgr.fetch_token()
         mailMgr.download_attachments()
         parserMgr.parseDir(delProcFile=True)
-        report = parserMgr.computeTotals()
-
-        if (email):
-            botMGR.sendMailReport(report, email)
-        await interaction.followup.send(embed=botMGR.createReportEmbed(report))
-    except Exception as ex:
-        capture_exception(ex)
-
-
-@monitor('automated-email-report')
-def scheduleJob():
-    logger.debug("main.py (scheduleJob): cron job invoked")
-    mailMgr = GmailMgr()
-    parserMgr = DDPDFParser()
-    mailMgr.fetch_token()
-    mailMgr.download_attachments()
-    parserMgr.parseDir(delProcFile=True)
-    if (botMGR.MSClient):
-        res = parserMgr.computeTotals()
-        if (res["orderCnt"] == 0):
-            logger.info("main.py (scheduleJob): No orders are found for the day, skipping email report")
-            return
-        botMGR.sendMailReport(res)
-        logger.info("main.py (scheduleJob): automated email report sent")
+        if (botMGR.MSClient):
+            res = parserMgr.computeTotals()
+            if (res["orderCnt"] == 0):
+                logger.info("main.py (scheduleJob): No orders are found for the day, skipping email report")
+                return
+            botMGR.sendMailReport(res)
+            logger.info("main.py (scheduleJob): automated email report sent")
 
 
 def scheduleRun():
@@ -76,7 +83,9 @@ async def main():
 if __name__ == "__main__":
     sentry_sdk.init(
         dsn=os.getenv("SENTRY_DSN", "http://dead@localhost/0000000"),
-        traces_sample_rate=0.0,
+        traces_sample_rate=1.0,
+        profiles_sample_rate=1.0,
+        profile_lifecycle="trace",
         send_default_pii=True,
         enable_logs=True,
         before_send_log=log_handler,
