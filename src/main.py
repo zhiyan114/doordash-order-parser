@@ -84,8 +84,8 @@ if __name__ == "__main__":
     sentry_sdk.init(
         dsn=os.getenv("SENTRY_DSN", "http://dead@localhost/0000000"),
         traces_sample_rate=1.0,
-        profiles_sample_rate=1.0,
-        profile_lifecycle="trace",
+        profiles_sample_rate=0.0,
+        profile_lifecycle="manual",
         send_default_pii=True,
         enable_logs=True,
         before_send_log=log_handler,
