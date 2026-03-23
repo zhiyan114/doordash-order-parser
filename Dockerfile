@@ -17,11 +17,13 @@ ENV GTOKEN=${GTOKEN}
 ENV SENTRY_DSN=${SENTRY_DSN}
 ENV SENTRY_ENVIRONMENT=${SENTRY_ENVIRONMENT}
 
-# Copy Source and setup
-COPY ./src/* ./
-COPY ./templates ./templates
+# Install Dependency
 COPY ./requirements.txt ./requirements.txt
 RUN python -m pip install --upgrade -r requirements.txt
+
+# Copy Source and setup
+COPY ./templates ./templates
+COPY ./src/* ./
 
 # Run Service
 CMD python ./main.py
