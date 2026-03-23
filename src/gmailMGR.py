@@ -8,7 +8,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from sentry_sdk import logger
+from sentry_sdk import logger, trace, capture_exception
 
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
@@ -19,8 +19,10 @@ class GmailMgr:
     credPath: str = None
     gCred: Credentials = None
     oAuthPath: str = None
+    attachmentLists: list = []  # (msgID, attID, fileName)
+    tempDir: str = None
 
-    def __init__(self, oAuthPath: str = "OAuth.json", credPath: str = "GToken.json"):
+    def __init__(self, oAuthPath: str = "OAuth.json", credPath: str = "GToken.json", tempDir: str = "./temp"):
         envToken = os.getenv("GTOKEN", None)
         if envToken:
             logger.debug('GmailMgr.__init__: Loading existing token from environment variable GTOKEN')
@@ -31,7 +33,10 @@ class GmailMgr:
 
         self.credPath = credPath
         self.oAuthPath = oAuthPath
+        self.attachmentLists = []
+        self.tempDir = tempDir
 
+    @trace(op="fetch_token", name="Fetch OAuth Token")
     def fetch_token(self):
         # Prompt OAuth
         if not self.gCred:
@@ -46,36 +51,78 @@ class GmailMgr:
 
         return self.gCred
 
-    def download_attachments(self, tempDir: str = "./temp"):
+    @trace(op="download_attachments", name="Download Email Attachments")
+    def download_attachments(self):
         if not self.gCred:
             logger.warn('GmailMgr.download_attachments: Missing user credential, use fetch_token() first')
             return None
 
-        if not os.path.isdir(tempDir):
-            os.mkdir(tempDir)
+        if not os.path.isdir(self.tempDir):
+            os.mkdir(self.tempDir)
 
         tz = ZoneInfo("America/New_York")
         dNow = datetime.now(tz)
         searchParam = f"from:orders@doordash.com has:attachment after:{math.ceil((datetime(dNow.year, dNow.month, dNow.day, 0, 0, 0, tzinfo=tz)).timestamp())}"
         gmailTool = build('gmail', 'v1', credentials=self.gCred)
+        self.attachmentLists = []
 
         logger.info("GmailMgr.download_attachments: Searching emails with query: {param}", param=searchParam)
         searchMsgs = gmailTool.users().messages().list(userId='me', q=searchParam).execute().get('messages', [])
-        logger.info("GmailMgr.download_attachments: Processing {count} emails", count=len(searchMsgs))
+        if len(searchMsgs) == 0:
+            logger.info("GmailMgr.download_attachments: No eligible messages are available to be processed")
+            return
 
+        # Get attachment ID from all eligible messages
+        logger.info("GmailMgr.download_attachments: Processing {count} messages", count=len(searchMsgs))
+        msg_batch = gmailTool.new_batch_http_request()
         for msg in searchMsgs:
-            msg = gmailTool.users().messages().get(userId='me', id=msg['id']).execute()
-            for part in msg['payload'].get('parts', []):
-                if part['filename'] and 'attachmentId' in part['body']:
-                    filePath = os.path.join(tempDir, part['filename'])
-                    if not os.path.exists(filePath):
-                        att = gmailTool.users().messages().attachments().get(userId='me', messageId=msg['id'], id=part['body']['attachmentId']).execute()
-                        data = att['data'].replace('-', '+').replace('_', '/')
-                        with open(filePath, 'wb') as f:
-                            f.write(base64.b64decode(data))
-                        logger.debug('GmailMgr.download_attachments: Saved {msgid} attachment to {file}', msgid=msg['id'], file=filePath)
-                        continue
+            msg_batch.add(
+                gmailTool.users().messages().get(userId='me', id=msg['id']),
+                callback=self.message_callback
+            )
+            logger.debug("GmailMgr.download_attachments: Batched Message {id}", id=msg['id'])
+        msg_batch.execute()
+
+        # Batch attachment downloads
+        logger.info("GmailMgr.download_attachments: Processing {count} attachments", count=len(self.attachmentLists))
+        att_batch = gmailTool.new_batch_http_request()
+        for att_data in self.attachmentLists:
+            att_batch.add(
+                gmailTool.users().messages().attachments().get(userId='me', messageId=att_data[0], id=att_data[1]),
+                callback=self.attachment_callback,
+                request_id=f"{att_data[0]}::{att_data[2]}"  # msgID::FileName
+            )
+        att_batch.execute()
+
+    @trace(op="message_callback", name="Batch Message Handle Callback")
+    def message_callback(self, reqID, res, ex):
+        if (ex):
+            capture_exception(ex)
+            return
+
+        for part in res['payload'].get('parts', []):
+            if part['filename'] and 'attachmentId' in part['body']:
+                filePath = os.path.join(self.tempDir, part['filename'])
+                if not os.path.exists(filePath):
+                    self.attachmentLists.append((res['id'], part['body']['attachmentId'], part['filename']))
+                else:
                     logger.warning('GmailMgr.download_attachments: attachment already existed for {file}', file=filePath)
+
+    @trace(op="attachment_callback", name="Batch Attachment Handle Callback")
+    def attachment_callback(self, reqID, res, ex):
+        if (ex):
+            capture_exception(ex)
+            return
+
+        msg_id, filename = reqID.split("::", 1)
+        filePath = os.path.join(self.tempDir, filename)
+
+        if not os.path.exists(filePath):
+            with open(filePath, 'wb') as f:
+                f.write(base64.urlsafe_b64decode(res['data']))
+            logger.debug('GmailMgr.download_attachments: Saved {msgid} attachment to {file}', msgid=msg_id, file=filePath)
+        else:
+            logger.warning('GmailMgr.download_attachments: attachment already existed for {file}', file=filePath)
 
     def __write_token(self):
         with open(self.credPath, "w") as writer:
