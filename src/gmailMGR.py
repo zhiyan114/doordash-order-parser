@@ -94,6 +94,9 @@ class GmailMgr:
             )
         att_batch.execute()
 
+        # Clean up
+        gmailTool.close()
+
     @trace(op="message_callback", name="Batch Message Handle Callback")
     def message_callback(self, reqID, res, ex):
         if (ex):

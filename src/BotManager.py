@@ -55,7 +55,7 @@ class BotManager(discord.Client):
             content = content.replace("{count}", str(computedData["orderCnt"]))
             content = content.replace("{subtotal}", str(computedData["subtotal"]))
             content = content.replace("{tax}", str(computedData["tax"]))
-            content = content = content.replace("{total}", str(computedData["total"]))
+            content = content.replace("{total}", str(computedData["total"]))
 
             # Send Content
             logger.info("BotManager.sendMailReport: Sending email report")
