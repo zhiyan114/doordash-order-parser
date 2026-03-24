@@ -97,11 +97,10 @@ class GmailMgr:
         # Clean up
         gmailTool.close()
 
-    @trace(op="message_callback", name="Batch Message Handle Callback")
+#    @trace(op="message_callback", name="Batch Message Handle Callback")
     def message_callback(self, reqID, res, ex):
         if (ex):
-            capture_exception(ex)
-            return
+            return capture_exception(ex)
 
         for part in res['payload'].get('parts', []):
             if part['filename'] and 'attachmentId' in part['body']:
@@ -111,11 +110,10 @@ class GmailMgr:
                 else:
                     logger.warning('GmailMgr.download_attachments: attachment already existed for {file}', file=filePath)
 
-    @trace(op="attachment_callback", name="Batch Attachment Handle Callback")
+    @trace(op="attachment_callback", name="Process/Write attachment to disk")
     def attachment_callback(self, reqID, res, ex):
         if (ex):
-            capture_exception(ex)
-            return
+            return capture_exception(ex)
 
         msg_id, filename = reqID.split("::", 1)
         filePath = os.path.join(self.tempDir, filename)

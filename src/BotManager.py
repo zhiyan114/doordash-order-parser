@@ -2,7 +2,7 @@ import discord
 import os
 import datetime
 from zoneinfo import ZoneInfo
-from sentry_sdk import logger
+from sentry_sdk import logger, trace
 from discord import app_commands
 from MailService import MailService
 
@@ -36,6 +36,7 @@ class BotManager(discord.Client):
         embed.timestamp = datetime.datetime.now(datetime.timezone.utc)
         return embed
 
+    @trace(op="sendMailReport", name="Send Email Report")
     def sendMailReport(self, computedData: dict, email: str = None):
         email = email or os.getenv("CRON_EMAIL", None)
         if not email:
