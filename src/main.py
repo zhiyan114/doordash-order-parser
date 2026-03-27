@@ -29,7 +29,7 @@ def transactionHandler(event: Event, hint: Hint):
     spans = event.get("spans", [])
     span_ops = {span.get("op") for span in spans}
     # Drop empty job transactions
-    if not span_ops.issubset({"attachment_callback", "parseFile"}):
+    if not ({"attachment_callback", "parseFile"}).issubset(span_ops):
         return None
     return event
 
