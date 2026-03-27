@@ -9,7 +9,7 @@ import threading
 import sentry_sdk
 import time
 from sentry_sdk.integrations.logging import SentryLogsHandler, LoggingIntegration
-from sentry_sdk.types import Log, Hint
+from sentry_sdk.types import Log, Hint, Event
 from sentry_sdk import isolation_scope, logger, capture_exception, monitor
 from gmailMGR import GmailMgr
 from PDFParse import DDPDFParser
@@ -23,6 +23,15 @@ botMGR = BotManager()
 def log_handler(log: Log, hint: Hint):
     print(log["body"], file=sys.stdout, flush=True)
     return log
+
+
+def transactionHandler(event: Event, hint: Hint):
+    spans = event.get("spans", [])
+    span_ops = {span.get("op") for span in spans}
+    # Drop empty job transactions
+    if not span_ops.issubset({"attachment_callback", "parseFile"}):
+        return None
+    return event
 
 
 @botMGR.tree.command(name="generate", description="Generate today's doordash Financial Report")
@@ -89,6 +98,7 @@ if __name__ == "__main__":
         send_default_pii=True,
         enable_logs=True,
         before_send_log=log_handler,
+        before_send_transaction=transactionHandler,
         default_integrations=True,
         disabled_integrations=[
             LoggingIntegration()
