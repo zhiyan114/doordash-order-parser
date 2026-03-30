@@ -63,39 +63,36 @@ class GmailMgr:
         tz = ZoneInfo("America/New_York")
         dNow = datetime.now(tz)
         searchParam = f"from:orders@doordash.com has:attachment after:{math.ceil((datetime(dNow.year, dNow.month, dNow.day, 0, 0, 0, tzinfo=tz)).timestamp())}"
-        gmailTool = build('gmail', 'v1', credentials=self.gCred)
-        self.attachmentLists = []
+        with build('gmail', 'v1', credentials=self.gCred) as gmailTool:
+            self.attachmentLists = []
 
-        logger.info("GmailMgr.download_attachments: Searching emails with query: {param}", param=searchParam)
-        searchMsgs = gmailTool.users().messages().list(userId='me', q=searchParam).execute().get('messages', [])
-        if len(searchMsgs) == 0:
-            logger.info("GmailMgr.download_attachments: No eligible messages are available to be processed")
-            return
+            logger.info("GmailMgr.download_attachments: Searching emails with query: {param}", param=searchParam)
+            searchMsgs = gmailTool.users().messages().list(userId='me', q=searchParam).execute().get('messages', [])
+            if len(searchMsgs) == 0:
+                logger.info("GmailMgr.download_attachments: No eligible messages are available to be processed")
+                return
 
-        # Get attachment ID from all eligible messages
-        logger.info("GmailMgr.download_attachments: Processing {count} messages", count=len(searchMsgs))
-        msg_batch = gmailTool.new_batch_http_request()
-        for msg in searchMsgs:
-            msg_batch.add(
-                gmailTool.users().messages().get(userId='me', id=msg['id']),
-                callback=self.message_callback
-            )
-            logger.debug("GmailMgr.download_attachments: Batched Message {id}", id=msg['id'])
-        msg_batch.execute()
+            # Get attachment ID from all eligible messages
+            logger.info("GmailMgr.download_attachments: Processing {count} messages", count=len(searchMsgs))
+            msg_batch = gmailTool.new_batch_http_request()
+            for msg in searchMsgs:
+                msg_batch.add(
+                    gmailTool.users().messages().get(userId='me', id=msg['id']),
+                    callback=self.message_callback
+                )
+                logger.debug("GmailMgr.download_attachments: Batched Message {id}", id=msg['id'])
+            msg_batch.execute()
 
-        # Batch attachment downloads
-        logger.info("GmailMgr.download_attachments: Processing {count} attachments", count=len(self.attachmentLists))
-        att_batch = gmailTool.new_batch_http_request()
-        for att_data in self.attachmentLists:
-            att_batch.add(
-                gmailTool.users().messages().attachments().get(userId='me', messageId=att_data[0], id=att_data[1]),
-                callback=self.attachment_callback,
-                request_id=f"{att_data[0]}::{att_data[2]}"  # msgID::FileName
-            )
-        att_batch.execute()
-
-        # Clean up
-        gmailTool.close()
+            # Batch attachment downloads
+            logger.info("GmailMgr.download_attachments: Processing {count} attachments", count=len(self.attachmentLists))
+            att_batch = gmailTool.new_batch_http_request()
+            for att_data in self.attachmentLists:
+                att_batch.add(
+                    gmailTool.users().messages().attachments().get(userId='me', messageId=att_data[0], id=att_data[1]),
+                    callback=self.attachment_callback,
+                    request_id=f"{att_data[0]}::{att_data[2]}"  # msgID::FileName
+                )
+            att_batch.execute()
 
 #    @trace(op="message_callback", name="Batch Message Handle Callback")
     def message_callback(self, reqID, res, ex):
