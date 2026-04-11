@@ -16,11 +16,11 @@ SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
 
 class GmailMgr:
-    credPath: str = None
-    gCred: Credentials = None
-    oAuthPath: str = None
-    attachmentLists: list = []  # (msgID, attID, fileName)
-    tempDir: str = None
+    credPath: str
+    gCred: Credentials
+    oAuthPath: str
+    attachmentLists: list  # (msgID, attID, fileName)
+    tempDir: str
 
     def __init__(self, oAuthPath: str = "OAuth.json", credPath: str = "GToken.json", tempDir: str = "./temp"):
         envToken = os.getenv("GTOKEN", None)

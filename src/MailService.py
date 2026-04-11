@@ -100,8 +100,8 @@ class MailService:
 
         match method.lower():
             case "post":
-                return requests.post(url=f"{self.baseUrl}{path}", headers=header, json=jsonData)
+                return requests.post(url=f"{self.baseUrl}{path}", headers=header, json=jsonData, timeout=10)
             case "get":
-                return requests.get(url=f"{self.baseUrl}{path}", headers=header)
+                return requests.get(url=f"{self.baseUrl}{path}", headers=header, timeout=10)
             case _:
                 raise Exception("SDK Error: Invalid/Unhandled HTTP method supplied")
