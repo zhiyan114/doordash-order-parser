@@ -10,7 +10,7 @@ from MailService import MailService
 class BotManager(discord.Client):
     def __init__(self):
         intents = discord.Intents.default()
-        super().__init__(intents=intents)
+        super().__init__(intents=intents, max_messages=5)
         self.tree = app_commands.CommandTree(self)
 
         # Initialize mailgun client
